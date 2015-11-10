@@ -1,0 +1,27 @@
+var roleCursor = db.cssUserDetails.find({"username":/mmurtuz/})
+
+while(roleCursor.hasNext())
+{
+    var current= roleCursor.next() 
+    
+    db.cssUserDetails.update({"_id":current._id},
+                         {$pull:{authorities:DBRef("cssRole",ObjectId("52b20067300442c8c92f3fc2"))}}                         
+                         ) 
+            
+    db.cssUserDetails.update({"_id":current._id},
+                         { $addToSet: { authorities: { $each:[DBRef("cssRole",ObjectId("563275cdb67295f31ba75955"))]}}}                                       
+                         )      
+    if(current.currentRole.$id.equals(ObjectId("52b20067300442c8c92f3fc2"))){
+      print("id is " + current.currentRole.$id) 
+      db.cssUserDetails.update({"_id":current._id},
+                         {$unset:{currentRole:DBRef("cssRole",ObjectId("52b20067300442c8c92f3fc2"))}}                         
+                         ) 
+      db.cssUserDetails.update({"_id":current._id},
+                         {$set:{currentRole:DBRef("cssRole",ObjectId("563275cdb67295f31ba75955"))}}                         
+                         )
+    }
+    else {
+        print("Online or delivery Agent is not current Role")
+    }
+}
+     
