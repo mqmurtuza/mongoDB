@@ -1,27 +1,82 @@
-var roleCursor = db.cssUserDetails.find({"username":/mmurtuz/})
+//ONLINE AGENT ID ='532cb8501c2619958df37129'
+//DELIVERY AGENT ID ='546621701e0894cd0bcf1ebd'
+//ONLINE AGENT RFC EXEMPT = '5632884b10f54f12a050ad03'
+//DELIVERY AGENT RFC EXEMPT = '563287d310f54f12a050ad02'
 
-while(roleCursor.hasNext())
+
+var ONLINE_AGENT_ID = db.cssRole1.find({"name": "ONLINE AGENT"}).next()._id
+var ONLINE_AGENT_RFC_EXEMPT = db.cssRole1.find({"name": "ONLINE AGENT RFC EXEMPT"}).next()._id
+var DELIVERY_AGENT_ID = db.cssRole1.find({"name": "DELIVERY AGENT"}).next()._id
+var DELIVERY_AGENT_RFC_EXEMPT = db.cssRole1.find({"name": "DELIVERY AGENT RFC EXEMPT"}).next()._id
+var VIEW_ONLY = db.cssRole1.find({"name": "VIEW ONLY"}).next()._id
+
+
+var file = cat('C:/Users/mmurtuz/Documents/sears/RoleChanges1.txt')
+var line = file.split('\n'); 
+for (var i = 0, linelength = line.length; i < 3; i++){ 
+    var words = line[i].split('|') 
+    var roleName = words[1]
+    var userName = words[2]
+    var newRole  = words[3]
+ //print(words[0] +" " + roleName +" " + userName +" " +newRole) 
+var userCursor = db.cssUserDetails1.find({"username":words[2]})
+while(userCursor.hasNext())
 {
-    var current= roleCursor.next() 
+    var current= userCursor.next()
+    //print("username is "+current.username)
+    var onlineAgentCount = db.cssUserDetails1.find({"_id":current._id,"authorities.$id":ONLINE_AGENT_ID}).count()   
+    if(onlineAgentCount > 0) {   
+    db.cssUserDetails1.update({"_id":current._id},
+                         {$pull:{authorities:DBRef("cssRole",ONLINE_AGENT_ID)}}                         
+                         ) 
+        if( newRole == "View Only") {
+              db.cssUserDetails1.update({"_id":current._id},
+                            { $addToSet: { authorities: { $each:[DBRef("cssRole",VIEW_ONLY)]}}}                                       
+                             )  
+         } else {
+              db.cssUserDetails1.update({"_id":current._id},
+                             { $addToSet: { authorities: { $each:[DBRef("cssRole",ONLINE_AGENT_RFC_EXEMPT)]}}}                                       
+                             )  
+             
+         }
+   }
     
-    db.cssUserDetails.update({"_id":current._id},
-                         {$pull:{authorities:DBRef("cssRole",ObjectId("52b20067300442c8c92f3fc2"))}}                         
+    var deliveryAgentCount = db.cssUserDetails1.find({"_id":current._id,"authorities.$id":DELIVERY_AGENT_ID}).count()   
+    if(deliveryAgentCount > 0) {   
+    db.cssUserDetails1.update({"_id":current._id},
+                         {$pull:{authorities:DBRef("cssRole",DELIVERY_AGENT_ID)}}                         
                          ) 
             
-    db.cssUserDetails.update({"_id":current._id},
-                         { $addToSet: { authorities: { $each:[DBRef("cssRole",ObjectId("563275cdb67295f31ba75955"))]}}}                                       
-                         )      
-    if(current.currentRole.$id.equals(ObjectId("52b20067300442c8c92f3fc2"))){
-      print("id is " + current.currentRole.$id) 
-      db.cssUserDetails.update({"_id":current._id},
-                         {$unset:{currentRole:DBRef("cssRole",ObjectId("52b20067300442c8c92f3fc2"))}}                         
+    db.cssUserDetails1.update({"_id":current._id},
+                         { $addToSet: { authorities: { $each:[DBRef("cssRole",DELIVERY_AGENT_RFC_EXEMPT)]}}}                                       
+                         )  
+    }  
+  
+// Update Current Role     
+    if(current.currentRole.$id.equals(ONLINE_AGENT_ID)){
+         db.cssUserDetails1.update({"_id":current._id},
+                         {$unset:{currentRole:DBRef("cssRole",ONLINE_AGENT_ID)}}                         
                          ) 
-      db.cssUserDetails.update({"_id":current._id},
-                         {$set:{currentRole:DBRef("cssRole",ObjectId("563275cdb67295f31ba75955"))}}                         
+                         
+                  if( newRole =="View Only") {                    
+                            db.cssUserDetails1.update({"_id":current._id},
+                                     {$set:{currentRole:DBRef("cssRole",VIEW_ONLY)}}                         
+                                     )
+                     } else {       
+                    db.cssUserDetails1.update({"_id":current._id},
+                                     {$set:{currentRole:DBRef("cssRole",ONLINE_AGENT_RFC_EXEMPT)}}                         
+                                     )
+                    }
+       }   
+      if(current.currentRole.$id.equals(DELIVERY_AGENT_ID)){
+        db.cssUserDetails1.update({"_id":current._id},
+                         {$unset:{currentRole:DBRef("cssRole",DELIVERY_AGENT_ID)}}                         
+                         ) 
+        db.cssUserDetails1.update({"_id":current._id},
+                         {$set:{currentRole:DBRef("cssRole",DELIVERY_AGENT_RFC_EXEMPT)}}                         
                          )
+       }    
     }
-    else {
-        print("Online or delivery Agent is not current Role")
-    }
-}
-     
+ }                  
+                        
+
